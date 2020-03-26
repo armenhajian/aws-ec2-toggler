@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>AWS Instance Toggler</title>
+    <link rel='stylesheet' href='/stylesheets/style.css'/>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+</head>
+<body>
+<h1>AWS Instance Toggler</h1>
+<p>Welcome to AWS Instance Toggler</p>
+
+<table>
+    <thead>
+    <tr>
+        <th>Instance ID</th>
+        <th>Instance Type</th>
+        <th>Availability Zone</th>
+        <th>Last Launch Time</th>
+        <th>Public IP</th>
+        <th>Instance Status</th>
+    </tr>
+    </thead>
+    <% instanceList.forEach(instance => { %>
+    <tr>
+        <td>
+            <%= instance.InstanceId %>
+        </td>
+        <td>
+            <%= instance.InstanceType %>
+        </td>
+        <td>
+            <%= instance.Placement.AvailabilityZone %>
+        </td>
+        <td>
+            <%= new Date(instance.LaunchTime) %>
+        </td>
+        <td style="width: 100px;">
+            <div id="loader-<%= instance.InstanceId %>" class="loader" style="display: none"></div>
+            <span class="ip"><%= instance.PublicIpAddress %></span>
+        </td>
+        <td>
+            <label class="switch">
+                <input class="change-status"
+                       type="checkbox"
+                       data-instance="<%= instance.InstanceId %>"
+                        <%= instance.State && instance.State.Name !== 'stopped' ? 'checked' : '' %>>
+                <span class="slider round"></span>
+            </label>
+        </td>
+    </tr>
+    <% }) %>
+</table>
+</body>
+<script>
+    $('.change-status').change(function(e) {
+        const instanceId = $(this).data('instance');
+        const api = this.checked ? 'start' : 'stop'
+
+        const loader = $(`#loader-${instanceId}`);
+        loader.show();
+        $.post(`/aws/${api}`, {
+            instanceId
+        }).then(() => {
+            setTimeout(() => {
+                location.reload();
+            }, 15000);
+        })
+    })
+
+    $('.ip').click(function() {
+        const copyText = $(this);
+
+        const el = document.createElement('textarea');
+        el.value = copyText.text();
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand('copy');
+        document.body.removeChild(el);
+        alert('IP is copied');
+    })
+</script>
+</html>
